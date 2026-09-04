@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+redis
+pydantic
+livekit-api
+sqlalchemy[asyncio]
+asyncpg
+celery
+python-dotenv
+pydantic-settings
+python-multipart
+pypdf 
+python-docx
