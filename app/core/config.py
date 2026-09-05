@@ -1,9 +1,12 @@
 # Configurations & Env Settings
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "IntervYou AI Backend"
     API_V1_STR: str = "/api/v1"
+    DEBUG: bool = False
+
+    SECRET_KEY: str = "super-secret-key-12345"
     
     # Infrastructure Services
     REDIS_URL: str = "redis://localhost:6379"
@@ -14,8 +17,7 @@ class Settings(BaseSettings):
     LIVEKIT_API_SECRET: str = "secretsecretsecretsecretsecretsecretsecret"
     LIVEKIT_URL: str = "ws://localhost:7880"
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+
 
 settings = Settings()

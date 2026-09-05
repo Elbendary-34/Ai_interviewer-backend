@@ -1,25 +1,29 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware #allow frontend to request data from backend
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.database import engine
 from app.db.base import Base
-from app.api.v1.router import api_router #center of all endpoints for layer 2 of the application
-from fastapi.staticfiles import StaticFiles
+from app.api.v1.router import api_router
+from app.services.redis_service import redis_service
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Create PostgreSQL tables automatically if they don't exist
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     print("PostgreSQL Tables created successfully!")
-    
+
+    await redis_service.connect()
+    print("Redis connection established.")
+
     yield
-    
-    # Shutdown: Dispose engine connection pool gracefully
+
+    await redis_service.close()
     await engine.dispose()
-    print("Database connection closed gracefully.")
+    print("Database & Redis connections closed gracefully.")
 
 
 app = FastAPI(
@@ -30,36 +34,30 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Enable CORS for Frontend (Flutter / Web) integration
+# JWT auth is header-based (Authorization: Bearer <token>), not
+# cookie-based, so allow_credentials is not needed — and combining it
+# with a wildcard origin is invalid per the CORS spec anyway (browsers,
+# including Flutter Web, will reject it).
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], #allow frontend to request data from backend
-    allow_credentials=True,
-    allow_methods=["*"], #allow methods and headers from frontend to backend and headers 
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Root Health Check Endpoint
+
 @app.get("/", tags=["Health"])
 async def root_health_check():
     return {
         "status": "online",
         "project": settings.PROJECT_NAME,
-        "version": "1.0.0"
+        "version": "1.0.0",
     }
 
-# Include API Router for Layer 2 Endpoints
-app.include_router(api_router, prefix=settings.API_V1_STR)
 
-# Mount the uploads directory to serve uploaded files
+app.include_router(api_router, prefix=settings.API_V1_STR)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-
-#!#test_connection endpoint to check if backend is running and connected to database
-@app.get("/api/test-connection")
-async def test_connection():
-    return {
-        "status": "success",
-        "message": "Connected successfully to Backend!",
-        "server_status": "online"
-    }
+# Removed: /api/test-connection (duplicate of the "/" health check above)
+# Removed: /sessions/setup-test (leftover debug endpoint — see sessions.py)

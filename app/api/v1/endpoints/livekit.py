@@ -1,34 +1,28 @@
 # LiveKit Room & Token Endpoints
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from app.services.livekit_service import livekit_service
+from fastapi import APIRouter, Depends, HTTPException
+
 from app.core.config import settings
+from app.core.security import get_current_user_id
+from app.schemas.livekit import TokenRequest, TokenResponse
+from app.services.livekit_service import livekit_service
 
 router = APIRouter()
 
-class TokenRequest(BaseModel):
-    room_name: str
-    participant_identity: str
-    participant_name: str = None
-
-class TokenResponse(BaseModel):
-    token: str
-    server_url: str
-
-    class Config:
-        fields = {'server_url': 'serverUrl'}
 
 @router.post("/token", response_model=TokenResponse)
-async def get_livekit_token(request: TokenRequest):
+async def get_livekit_token(
+    request: TokenRequest,
+    user_id: str = Depends(get_current_user_id),  # was completely unauthenticated before
+):
     try:
         token = livekit_service.generate_token(
             room_name=request.room_name,
             participant_identity=request.participant_identity,
-            participant_name=request.participant_name
+            participant_name=request.participant_name,
         )
         return TokenResponse(
             token=token,
-            server_url=settings.LIVEKIT_SERVER_URL
-            )
+            server_url=settings.LIVEKIT_URL,  # was settings.LIVEKIT_SERVER_URL, which doesn't exist
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate token: {str(e)}")
