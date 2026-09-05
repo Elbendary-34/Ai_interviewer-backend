@@ -1,1 +1,0 @@
-# IntervYou AI - Backend Architecture

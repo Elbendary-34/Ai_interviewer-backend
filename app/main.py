@@ -6,7 +6,7 @@ from app.core.config import settings
 from app.core.database import engine
 from app.db.base import Base
 from app.api.v1.router import api_router #center of all endpoints for layer 2 of the application
-
+from fastapi.staticfiles import StaticFiles
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -50,3 +50,6 @@ async def root_health_check():
 
 # Include API Router for Layer 2 Endpoints
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# Mount the uploads directory to serve uploaded files
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

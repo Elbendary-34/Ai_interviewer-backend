@@ -1,9 +1,10 @@
 import os
 import uuid
 from datetime import datetime
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
+import aiofiles
 
 from app.core.database import get_db
 from app.core.security import get_current_user_id
@@ -30,6 +31,7 @@ class InterviewPreferenceRequest(BaseModel):
 #1. Upload CV Endpoint
 @router.post("/upload-cv")
 async def upload_cv(
+    request: Request,
     file: UploadFile = File(...),
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
@@ -45,9 +47,9 @@ async def upload_cv(
     unique_filename = f"{uuid.uuid4()}{file_extension}"
     file_path = os.path.join(UPLOAD_DIR, unique_filename)
 
-    with open(file_path, "wb") as buffer:
-        content = await file.read()
-        buffer.write(content)
+    content = await file.read()
+    async with aiofiles.open(file_path, "wb") as buffer:
+        await buffer.write(content)
 
     #Saving data to the database
     profile = CandidateProfile(
@@ -61,6 +63,10 @@ async def upload_cv(
 
     #Sending the text extraction and CV analysis task to a Celery worker in the background
     process_cv_analysis.delay(str(profile.id))
+
+    #Returning the file path in the response
+    base_url = str(request.base_url).rstrip('/')
+    file_url = f"{base_url}/{file_path.replace('\\', '/')}"
 
     return {
         "message": "CV uploaded successfully and analysis queued",
