@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from pydantic import BaseModel
@@ -92,4 +92,34 @@ async def get_session_report(
         "posture_score": report.posture_score,
         "speech_clarity_score": report.speech_clarity_score,
         "feedback_summary": report.feedback_summary
+    }
+
+
+
+
+#!#test endpoint to check if the backend is running and connected to the database
+@router.post("/setup-test")
+async def setup_interview_test(
+    job_role: str = Form(...),
+    experience_level: str = Form(...),
+    cv_file: UploadFile = File(...)
+):
+    if not cv_file.filename.endswith(".pdf"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="File must be a PDF"
+        )
+    
+    contents = await cv_file.read()
+    file_size_kb = len(contents) / 1024
+
+    return {
+        "status": "success",
+        "message": "CV uploaded successfully!",
+        "received_data": {
+            "job_role": job_role,
+            "experience_level": experience_level,
+            "filename": cv_file.filename,
+            "file_size": f"{file_size_kb:.2f} KB"
+        }
     }

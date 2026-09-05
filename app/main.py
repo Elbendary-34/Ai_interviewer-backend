@@ -53,3 +53,13 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 
 # Mount the uploads directory to serve uploaded files
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
+
+#!#test_connection endpoint to check if backend is running and connected to database
+@app.get("/api/test-connection")
+async def test_connection():
+    return {
+        "status": "success",
+        "message": "Connected successfully to Backend!",
+        "server_status": "online"
+    }

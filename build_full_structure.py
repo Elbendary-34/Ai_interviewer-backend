@@ -34,10 +34,14 @@ files = {
     "app/api/v1/endpoints/__init__.py": "",
     "app/api/v1/endpoints/livekit.py": "# LiveKit Room & Token Endpoints\n",
     "app/api/v1/endpoints/ws_analytics.py": "# Real-time WebSocket Endpoint\n",
+    "app/api/v1/endpoints/session.py": "# Interview Session Endpoints\n",
+    "app/api/v1/endpoints/auth.py": "# Authentication Endpoints\n",
+    "app/api/v1/endpoints/candidate.py": "# Candidate Management Endpoints\n",
     "app/services/__init__.py": "",
     "app/services/redis_service.py": "# Async Redis Service\n",
     "app/services/livekit_service.py": "# LiveKit Server Integration\n",
     "app/services/alert_engine.py": "# Real-time Alert & Threshold Rules\n",
+    "app/services/cv_parser.py": "# CV Parser Service\n",
     "app/workers/__init__.py": "",
     "app/workers/celery_app.py": "# Celery Application Instance\n",
     "app/workers/tasks.py": "# Background Processing Tasks\n",
@@ -65,7 +69,7 @@ files = {
         "      - \"7880:7880\"\n"
         "      - \"7881:7881\"\n"
         "      - \"7882:7882/udp\"\n"
-        "      - \"50000-50200:50000-50200/udp\"\n"
+        "      - \"50000-50010:50000-50010/udp\"\n"
         "    environment:\n"
         "      LIVEKIT_KEYS: \"devkey: secretsecretsecretsecretsecretsecretsecret\"\n"
         "    volumes:\n"
@@ -80,7 +84,7 @@ files = {
         "rtc:\n"
         "  tcp_port: 7881\n"
         "  port_range_start: 50000\n"
-        "  port_range_end: 50200\n"
+        "  port_range_end: 50010\n"
         "  use_external_ip: false\n\n"
         "keys:\n"
         "  devkey: secretsecretsecretsecretsecretsecretsecret\n"
@@ -103,7 +107,7 @@ files = {
         "celery\n"
         "python-dotenv\n"
     ),
-    "README.md": "# IntervYou AI - Layer 2 & Layer 4 Backend Architecture\n",
+    "README.md": "",
 }
 
 def generate_project():
