@@ -16,7 +16,5 @@ async def login(payload: LoginRequest):
     expire = datetime.now(timezone.utc) + timedelta(hours=24)
     to_encode = {"sub": str(payload.user_id), "exp": expire}
 
-    # Now reads the real, declared settings.SECRET_KEY (see config.py fix)
-    # instead of silently always using the hardcoded fallback.
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm="HS256")
     return TokenResponse(access_token=encoded_jwt)

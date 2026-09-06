@@ -12,11 +12,6 @@ class SessionResponse(CamelModel):
 
 
 class SessionStartResponse(CamelModel):
-    """
-    Returned by POST /sessions/start. Bundles the session record with the
-    LiveKit token so the Flutter client can join the room immediately —
-    one round trip instead of two.
-    """
     id: str
     user_id: str
     room_name: str

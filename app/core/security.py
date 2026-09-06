@@ -7,12 +7,6 @@ security_scheme = HTTPBearer()
 
 
 def decode_user_id(token: str) -> str:
-    """
-    Shared JWT decoding logic. Extracted so both the HTTP dependency
-    below AND the WebSocket handshake in ws_analytics.py (which can't
-    use FastAPI's HTTPBearer dependency the same way) can validate a
-    token with identical logic.
-    """
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
         user_id: str = payload.get("sub")

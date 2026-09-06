@@ -63,12 +63,7 @@ async def get_reconnect_token(
     db: AsyncSession = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
-    """
-    Formerly the standalone POST /livekit/token endpoint. Now scoped to an
-    existing session: a client can only request a fresh LiveKit token for
-    a room it's actually the owner of (e.g. after a dropped connection),
-    instead of generating a token for an arbitrary room_name string.
-    """
+
     result = await db.execute(select(InterviewSession).where(InterviewSession.id == session_id))
     session_obj = result.scalars().first()
 

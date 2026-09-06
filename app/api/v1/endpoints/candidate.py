@@ -46,9 +46,6 @@ async def upload_cv(
     profile = CandidateProfile(
         user_id=user_id,
         cv_file_path=file_path,
-        # `full_name` is not the CV's filename — leave it unset here.
-        # There is no real candidate name in this request; capture it via
-        # a dedicated profile-update endpoint instead of overloading this field.
     )
     db.add(profile)
     await db.commit()
@@ -56,8 +53,6 @@ async def upload_cv(
 
     process_cv_analysis.delay(str(profile.id))
 
-    # Normalize the path separator BEFORE the f-string (backslashes inside
-    # f-string expressions are a SyntaxError on Python < 3.12).
     normalized_path = file_path.replace("\\", "/")
     base_url = str(request.base_url).rstrip("/")
     file_url = f"{base_url}/{normalized_path}"

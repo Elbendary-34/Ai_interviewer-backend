@@ -17,7 +17,6 @@ POSTURE_THRESHOLD = 15      # ~4.5 seconds of consecutive slouching
 
 
 class AlertEngine:
-    """Threshold-based rules turning raw per-frame metrics into alerts."""
 
     async def process_metadata(self, payload: FrameMetadataPayload) -> list[AlertMessage]:
         alerts: list[AlertMessage] = []

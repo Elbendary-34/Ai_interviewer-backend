@@ -25,7 +25,6 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
     print("Database & Redis connections closed gracefully.")
 
-
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
@@ -34,10 +33,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# JWT auth is header-based (Authorization: Bearer <token>), not
-# cookie-based, so allow_credentials is not needed — and combining it
-# with a wildcard origin is invalid per the CORS spec anyway (browsers,
-# including Flutter Web, will reject it).
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -45,7 +40,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 @app.get("/", tags=["Health"])
 async def root_health_check():
@@ -55,9 +49,5 @@ async def root_health_check():
         "version": "1.0.0",
     }
 
-
 app.include_router(api_router, prefix=settings.API_V1_STR)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-
-# Removed: /api/test-connection (duplicate of the "/" health check above)
-# Removed: /sessions/setup-test (leftover debug endpoint — see sessions.py)
