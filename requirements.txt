@@ -11,5 +11,4 @@ pydantic-settings
 python-multipart
 pypdf 
 python-docx
-uvicorn
 aiofiles
