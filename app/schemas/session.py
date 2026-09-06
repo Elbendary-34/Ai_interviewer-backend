@@ -2,6 +2,8 @@ from typing import Optional
 from app.schemas.base import CamelModel
 
 
+# --- Session lifecycle schemas ---
+
 class SessionResponse(CamelModel):
     id: str
     user_id: str
@@ -11,10 +13,9 @@ class SessionResponse(CamelModel):
 
 class SessionStartResponse(CamelModel):
     """
-    Returned by POST /sessions/start. Bundles the session record with
-    everything the Flutter client needs to immediately join the LiveKit
-    room and render the live-interview screen in a single round trip —
-    no separate /livekit/token call required on the happy path.
+    Returned by POST /sessions/start. Bundles the session record with the
+    LiveKit token so the Flutter client can join the room immediately —
+    one round trip instead of two.
     """
     id: str
     user_id: str
@@ -31,3 +32,15 @@ class EndSessionResponse(CamelModel):
     message: str
     session_id: str
     task_id: str
+
+
+# --- LiveKit reconnect schemas (formerly schemas/livekit.py) ---
+
+class ReconnectTokenRequest(CamelModel):
+    participant_name: Optional[str] = None
+
+
+class ReconnectTokenResponse(CamelModel):
+    token: str
+    server_url: str
+    room_name: str

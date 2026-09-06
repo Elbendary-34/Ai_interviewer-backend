@@ -5,12 +5,17 @@ from sqlalchemy.future import select
 
 from app.core.database import get_db
 from app.core.security import get_current_user_id
+from app.core.config import settings
 from app.db.models.session import InterviewSession, SessionStatus
 from app.db.models.report import InterviewReport
 from app.workers.tasks import process_interview_post_session
 from app.services.livekit_service import livekit_service
-from app.core.config import settings
-from app.schemas.session import SessionResponse, SessionStartResponse, EndSessionResponse
+from app.schemas.session import (
+    SessionStartResponse,
+    EndSessionResponse,
+    ReconnectTokenRequest,
+    ReconnectTokenResponse,
+)
 from app.schemas.report import ReportResponse
 
 router = APIRouter()
@@ -34,9 +39,6 @@ async def start_session(
     await db.commit()
     await db.refresh(new_session)
 
-    # Generate the LiveKit token in the SAME call that creates the session,
-    # so the Flutter client gets everything it needs (session + video
-    # access) in one round trip instead of two.
     livekit_token = livekit_service.generate_token(
         room_name=room_name,
         participant_identity=user_id,
@@ -51,6 +53,45 @@ async def start_session(
         livekit_server_url=settings.LIVEKIT_URL,
         interviewer_title="AI Interview Specialist",
         total_questions=5,
+    )
+
+
+@router.post("/{session_id}/reconnect-token", response_model=ReconnectTokenResponse)
+async def get_reconnect_token(
+    session_id: str,
+    payload: ReconnectTokenRequest,
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Formerly the standalone POST /livekit/token endpoint. Now scoped to an
+    existing session: a client can only request a fresh LiveKit token for
+    a room it's actually the owner of (e.g. after a dropped connection),
+    instead of generating a token for an arbitrary room_name string.
+    """
+    result = await db.execute(select(InterviewSession).where(InterviewSession.id == session_id))
+    session_obj = result.scalars().first()
+
+    if not session_obj:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if session_obj.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized for this session")
+    if session_obj.status == SessionStatus.COMPLETED:
+        raise HTTPException(status_code=409, detail="Session has already ended")
+
+    try:
+        token = livekit_service.generate_token(
+            room_name=session_obj.room_name,
+            participant_identity=user_id,
+            participant_name=payload.participant_name,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate token: {str(e)}")
+
+    return ReconnectTokenResponse(
+        token=token,
+        server_url=settings.LIVEKIT_URL,
+        room_name=session_obj.room_name,
     )
 
 
@@ -95,7 +136,4 @@ async def get_session_report(
             detail="Report not found. The session might still be processing in the background.",
         )
 
-    # Was previously a hand-built snake_case dict, duplicating logic that
-    # already exists in app/schemas/report.py. Now uses the real schema
-    # (camelCase output, validated straight from the ORM object).
     return ReportResponse.model_validate(report)

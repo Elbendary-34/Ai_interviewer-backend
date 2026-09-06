@@ -1,18 +1,14 @@
 # API Router Aggregator
 from fastapi import APIRouter
-from app.api.v1.endpoints import livekit, sessions, ws_analytics, auth, candidate
+from app.api.v1.endpoints import ws_analytics, sessions, auth, candidate
 
 api_router = APIRouter()
 
 api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
-# Include LiveKit REST Router
-api_router.include_router(livekit.router, prefix="/livekit", tags=["LiveKit"])
-
-# Include WebSocket Router
 api_router.include_router(ws_analytics.router, tags=["Real-time Analytics"])
-
-# Include Sessions Router
 api_router.include_router(sessions.router, prefix="/sessions", tags=["Sessions"])
-
-# Include Candidate Router
 api_router.include_router(candidate.router, prefix="/candidates", tags=["Candidates"])
+
+# Note: the standalone "livekit" router no longer exists — its only
+# endpoint (/livekit/token) was merged into sessions.router as
+# POST /sessions/{session_id}/reconnect-token (see endpoints/sessions.py).
